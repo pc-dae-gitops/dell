@@ -1,0 +1,26 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster-config
+  namespace: ${nameSpace}
+data:
+  clusterType: "macbook"
+  mgmtClusterName: dell
+  dnsSuffix: dell
+  clusterIP: 10.96.117.210
+  scmType: github
+  GitHubOrg: pc-dae-gitops
+  GitHubRepo: dell
+  globalGitHubOrg: pc-dae-gitops
+  globalGitHubRepo: global
+  globalGitHubBranch: main
+  awsAccountId: "none"
+  prefixName: paul
+  awsRegion: us-west-2
+  userEmail: paul.carlton@dae.mn
+  vault_url: https://vault.dell
+  commitUser: paul-carlton
+  awsKeyPairName: paul-carlton
+  sshPubKey: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJXH+nNeSU7iC2ZSkindt3fG7DUz3tI2ePFw7eQIcIIA paul.carlton414@gmail.com
+  capi: "false"
