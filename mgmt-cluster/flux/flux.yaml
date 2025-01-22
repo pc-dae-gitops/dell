@@ -7,6 +7,8 @@ spec:
   dependsOn:
   - name: flux-components
   interval: 10m0s
+  retryInterval: 30s
+  timeout: 30s
   path: ./mgmt-cluster/addons/kyverno
   prune: true
   wait: true
@@ -23,6 +25,8 @@ spec:
   dependsOn:
   - name: flux-components
   interval: 10m0s
+  retryInterval: 30s
+  timeout: 30s
   path: ./mgmt-cluster/addons/cert-manager
   prune: true
   wait: true
@@ -39,7 +43,9 @@ spec:
   dependsOn:
   - name: flux-components
   interval: 10m0s
-  path: ./mgmt-cluster/addons/nginx-kind
+  retryInterval: 30s
+  timeout: 30s
+  path: ./mgmt-cluster/addons/nginx
   prune: true
   wait: true
   sourceRef:
@@ -47,23 +53,25 @@ spec:
     name: global-config
   postBuild:
     substitute:
-      dnsSuffix: kubernetes.dell
----
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata:
-  name: metrics-server
-  namespace: flux-system
-spec:
-  dependsOn:
-  - name: nginx
-  interval: 10m0s
-  path: ./mgmt-cluster/addons/metrics-server
-  prune: true
-  wait: true
-  sourceRef:
-    kind: GitRepository
-    name: global-config
+      dnsSuffix: kubernetes.docker.internal
+# ---
+# apiVersion: kustomize.toolkit.fluxcd.io/v1
+# kind: Kustomization
+# metadata:
+#   name: metrics-server
+#   namespace: flux-system
+# spec:
+#   dependsOn:
+#   - name: nginx
+#   interval: 10m0s
+#   retryInterval: 30s
+#   timeout: 30s
+#   path: ./mgmt-cluster/addons/metrics-server
+#   prune: true
+#   wait: true
+#   sourceRef:
+#     kind: GitRepository
+#     name: global-config
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
@@ -74,6 +82,8 @@ spec:
   dependsOn:
   - name: flux-components
   interval: 10m0s
+  retryInterval: 30s
+  timeout: 30s
   path: ./mgmt-cluster/addons/reloader
   prune: true
   wait: true
@@ -88,6 +98,8 @@ metadata:
   namespace: flux-system
 spec:
   interval: 10m0s
+  retryInterval: 30s
+  timeout: 30s
   path: ./mgmt-cluster/cert-config
   prune: true
   wait: true
@@ -99,7 +111,7 @@ spec:
     name: global-config
   postBuild:
     substitute:
-      dnsSuffix: kubernetes.dell
+      dnsSuffix: kubernetes.docker.internal
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
@@ -109,7 +121,10 @@ metadata:
 spec:
   dependsOn:
     - name: cert-config
+    - name: config
   interval: 10m0s
+  retryInterval: 30s
+  timeout: 30s
   path: ./mgmt-cluster/addons/vault
   prune: true
   wait: true
@@ -118,7 +133,7 @@ spec:
     name: global-config
   postBuild:
     substitute:
-      dnsSuffix: kubernetes.dell
+      dnsSuffix: kubernetes.docker.internal
       storageClass: hostpath
     substituteFrom:
       - kind: ConfigMap
@@ -133,6 +148,8 @@ spec:
   dependsOn:
   - name: flux-components
   interval: 10m0s
+  retryInterval: 30s
+  timeout: 30s
   path: ./mgmt-cluster/addons/external-secrets
   prune: true
   wait: true
@@ -147,6 +164,8 @@ metadata:
   namespace: flux-system
 spec:
   interval: 10m0s
+  retryInterval: 30s
+  timeout: 30s
   path: ./mgmt-cluster/secrets
   prune: true
   wait: true
@@ -158,7 +177,7 @@ spec:
     name: global-config
   postBuild:
     substitute:
-      dnsSuffix: kubernetes.dell
+      dnsSuffix: kubernetes.docker.internal
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
@@ -167,6 +186,8 @@ metadata:
   namespace: flux-system
 spec:
   interval: 10m0s
+  retryInterval: 30s
+  timeout: 30s
   dependsOn:
     - name: vault
     - name: secrets
@@ -189,8 +210,8 @@ metadata:
   namespace: flux-system
 spec:
   interval: 10m0s
-  dependsOn:
-    - name: nginx
+  retryInterval: 30s
+  timeout: 30s
   path: ./mgmt-cluster/config
   prune: true
   wait: true
@@ -198,175 +219,189 @@ spec:
     kind: GitRepository
     name: flux-system
 ---
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata:
-  name: monitoring
-  namespace: flux-system
-spec:
-  interval: 10m0s
-  dependsOn:
-    - name: dex
-  path: ./mgmt-cluster/addons/monitoring/namespace
-  prune: true
-  wait: true
-  sourceRef:
-    kind: GitRepository
-    name: global-config
-  postBuild:
-    substituteFrom:
-      - kind: ConfigMap
-        name: cluster-config
----
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: GitRepository
-metadata:
-  name: flux-monitoring
-  namespace: flux-system
-spec:
-  interval: 30m0s
-  ref:
-    branch: main
-  url: https://github.com/pc-gitops/flux2-monitoring
----
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata:
-  name: flux-mon-ctlr
-  namespace: flux-system
-spec:
-  interval: 1h0m0s
-  dependsOn:
-  - name: monitoring
-  path: ./monitoring/controllers/kube-prometheus-stack
-  prune: true
-  sourceRef:
-    kind: GitRepository
-    name: flux-monitoring
-  timeout: 5m0s
-  wait: true
-  postBuild:
-    substituteFrom:
-      - kind: ConfigMap
-        name: cluster-config
----
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata:
-  name: prometheus
-  namespace: flux-system
-spec:
-  interval: 10m0s
-  dependsOn:
-    - name: flux-mon-ctlr
-  path: ./mgmt-cluster/addons/monitoring/prometheus
-  prune: true
-  wait: true
-  sourceRef:
-    kind: GitRepository
-    name: global-config
-  postBuild:
-    substituteFrom:
-      - kind: ConfigMap
-        name: cluster-config
----
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata:
-  name: prom-alert
-  namespace: flux-system
-spec:
-  interval: 10m0s
-  dependsOn:
-    - name: prometheus
-  path: ./mgmt-cluster/addons/monitoring/prom-alert
-  prune: true
-  wait: true
-  sourceRef:
-    kind: GitRepository
-    name: global-config
-  postBuild:
-    substituteFrom:
-      - kind: ConfigMap
-        name: cluster-config
----
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata:
-  name: grafana
-  namespace: flux-system
-spec:
-  interval: 10m0s
-  dependsOn:
-    - name: prom-alert
-  path: ./mgmt-cluster/addons/monitoring/grafana
-  prune: true
-  wait: true
-  sourceRef:
-    kind: GitRepository
-    name: global-config
-  postBuild:
-    substituteFrom:
-      - kind: ConfigMap
-        name: cluster-config
----
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata:
-  name: loki
-  namespace: flux-system
-spec:
-  interval: 10m0s
-  dependsOn:
-    - name: grafana
-  path: ./mgmt-cluster/addons/monitoring/loki
-  prune: true
-  wait: true
-  sourceRef:
-    kind: GitRepository
-    name: global-config
-  postBuild:
-    substituteFrom:
-      - kind: ConfigMap
-        name: cluster-config
----
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata:
-  name: graf-agent
-  namespace: flux-system
-spec:
-  interval: 10m0s
-  dependsOn:
-    - name: loki
-  path: ./mgmt-cluster/addons/monitoring/graf-agent
-  prune: true
-  wait: true
-  sourceRef:
-    kind: GitRepository
-    name: global-config
-  postBuild:
-    substituteFrom:
-      - kind: ConfigMap
-        name: cluster-config
----
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata:
-  name: flux-mon-config
-  namespace: flux-system
-spec:
-  dependsOn:
-  - name: graf-agent
-  interval: 1h0m0s
-  path: ./monitoring/configs
-  prune: true
-  sourceRef:
-    kind: GitRepository
-    name: flux-monitoring
-  timeout: 1m0s
-  wait: true
----
+# apiVersion: kustomize.toolkit.fluxcd.io/v1
+# kind: Kustomization
+# metadata:
+#   name: monitoring
+#   namespace: flux-system
+# spec:
+#   interval: 10m0s
+#   retryInterval: 30s
+#   timeout: 30s
+#   dependsOn:
+#     - name: dex
+#   path: ./mgmt-cluster/addons/monitoring/namespace
+#   prune: true
+#   wait: true
+#   sourceRef:
+#     kind: GitRepository
+#     name: global-config
+#   postBuild:
+#     substituteFrom:
+#       - kind: ConfigMap
+#         name: cluster-config
+# ---
+# apiVersion: source.toolkit.fluxcd.io/v1
+# kind: GitRepository
+# metadata:
+#   name: flux-monitoring
+#   namespace: flux-system
+# spec:
+#   interval: 30m0s
+#   ref:
+#     branch: main
+#   url: https://github.com/pc-gitops/flux2-monitoring
+# ---
+# apiVersion: kustomize.toolkit.fluxcd.io/v1
+# kind: Kustomization
+# metadata:
+#   name: flux-mon-ctlr
+#   namespace: flux-system
+# spec:
+#   interval: 10m0s
+#   retryInterval: 30s
+#   timeout: 30s
+#   dependsOn:
+#   - name: monitoring
+#   path: ./monitoring/controllers/kube-prometheus-stack
+#   prune: true
+#   sourceRef:
+#     kind: GitRepository
+#     name: flux-monitoring
+#   wait: true
+#   postBuild:
+#     substituteFrom:
+#       - kind: ConfigMap
+#         name: cluster-config
+# ---
+# apiVersion: kustomize.toolkit.fluxcd.io/v1
+# kind: Kustomization
+# metadata:
+#   name: prometheus
+#   namespace: flux-system
+# spec:
+#   interval: 10m0s
+#   retryInterval: 30s
+#   timeout: 30s
+#   dependsOn:
+#     - name: flux-mon-ctlr
+#   path: ./mgmt-cluster/addons/monitoring/prometheus
+#   prune: true
+#   wait: true
+#   sourceRef:
+#     kind: GitRepository
+#     name: global-config
+#   postBuild:
+#     substituteFrom:
+#       - kind: ConfigMap
+#         name: cluster-config
+# ---
+# apiVersion: kustomize.toolkit.fluxcd.io/v1
+# kind: Kustomization
+# metadata:
+#   name: prom-alert
+#   namespace: flux-system
+# spec:
+#   interval: 10m0s
+#   retryInterval: 30s
+#   timeout: 30s
+#   dependsOn:
+#     - name: prometheus
+#   path: ./mgmt-cluster/addons/monitoring/prom-alert
+#   prune: true
+#   wait: true
+#   sourceRef:
+#     kind: GitRepository
+#     name: global-config
+#   postBuild:
+#     substituteFrom:
+#       - kind: ConfigMap
+#         name: cluster-config
+# ---
+# apiVersion: kustomize.toolkit.fluxcd.io/v1
+# kind: Kustomization
+# metadata:
+#   name: grafana
+#   namespace: flux-system
+# spec:
+#   interval: 10m0s
+#   retryInterval: 30s
+#   timeout: 30s
+#   dependsOn:
+#     - name: prom-alert
+#   path: ./mgmt-cluster/addons/monitoring/grafana
+#   prune: true
+#   wait: true
+#   sourceRef:
+#     kind: GitRepository
+#     name: global-config
+#   postBuild:
+#     substituteFrom:
+#       - kind: ConfigMap
+#         name: cluster-config
+# ---
+# apiVersion: kustomize.toolkit.fluxcd.io/v1
+# kind: Kustomization
+# metadata:
+#   name: loki
+#   namespace: flux-system
+# spec:
+#   interval: 10m0s
+#   retryInterval: 30s
+#   timeout: 30s
+#   dependsOn:
+#     - name: grafana
+#   path: ./mgmt-cluster/addons/monitoring/loki
+#   prune: true
+#   wait: true
+#   sourceRef:
+#     kind: GitRepository
+#     name: global-config
+#   postBuild:
+#     substituteFrom:
+#       - kind: ConfigMap
+#         name: cluster-config
+# ---
+# apiVersion: kustomize.toolkit.fluxcd.io/v1
+# kind: Kustomization
+# metadata:
+#   name: graf-agent
+#   namespace: flux-system
+# spec:
+#   interval: 10m0s
+#   retryInterval: 30s
+#   timeout: 30s
+#   dependsOn:
+#     - name: grafana
+#   path: ./mgmt-cluster/addons/monitoring/graf-agent
+#   prune: true
+#   wait: true
+#   sourceRef:
+#     kind: GitRepository
+#     name: global-config
+#   postBuild:
+#     substituteFrom:
+#       - kind: ConfigMap
+#         name: cluster-config
+# ---
+# apiVersion: kustomize.toolkit.fluxcd.io/v1
+# kind: Kustomization
+# metadata:
+#   name: flux-mon-config
+#   namespace: flux-system
+# spec:
+#   dependsOn:
+#   - name: graf-agent
+#   interval: 10m0s
+#   retryInterval: 30s
+#   timeout: 30s
+#   path: ./monitoring/configs
+#   prune: true
+#   sourceRef:
+#     kind: GitRepository
+#     name: flux-monitoring
+#   wait: true
+# ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
@@ -374,6 +409,8 @@ metadata:
   namespace: flux-system
 spec:
   interval: 10m0s
+  retryInterval: 30s
+  timeout: 30s
   dependsOn:
     - name: dex
   path: ./mgmt-cluster/bases/flux
