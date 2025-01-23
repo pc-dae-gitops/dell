@@ -3,7 +3,9 @@
 resources/.vault-init.json
 resources/*-secrets.sh
 resources/*-password.txt
+resources/*.pem
 
 .terraform
 *.tfstate*
 .terraform.lock.hcl
+
