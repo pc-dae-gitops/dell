@@ -53,7 +53,7 @@ spec:
     name: global-config
   postBuild:
     substitute:
-      dnsSuffix: kubernetes.dell
+      dnsSuffix: kubernetes.docker.internal
 # ---
 # apiVersion: kustomize.toolkit.fluxcd.io/v1
 # kind: Kustomization
@@ -111,7 +111,7 @@ spec:
     name: global-config
   postBuild:
     substitute:
-      dnsSuffix: kubernetes.dell
+      dnsSuffix: kubernetes.docker.internal
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
@@ -133,7 +133,7 @@ spec:
     name: global-config
   postBuild:
     substitute:
-      dnsSuffix: kubernetes.dell
+      dnsSuffix: kubernetes.docker.internal
       storageClass: hostpath
     substituteFrom:
       - kind: ConfigMap
@@ -177,7 +177,7 @@ spec:
     name: global-config
   postBuild:
     substitute:
-      dnsSuffix: kubernetes.dell
+      dnsSuffix: kubernetes.docker.internal
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
