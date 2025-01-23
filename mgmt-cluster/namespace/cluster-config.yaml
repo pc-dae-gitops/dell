@@ -8,7 +8,7 @@ data:
   clusterType: "macbook"
   mgmtClusterName: dell
   dnsSuffix: kubernetes.dell
-  clusterIP: 
+  clusterIP: 10.152.183.135
   scmType: github
   GitHubOrg: pc-dae-gitops
   GitHubRepo: dell
